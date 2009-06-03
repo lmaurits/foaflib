@@ -2,26 +2,21 @@ import rdflib
 from rdflib.Graph import ConjunctiveGraph as Graph
 from urllib import urlopen
 
-_SINGLETONS = """title name nick givenname firstName surname family_name
-birthday gender homepage geekcode meyersBriggs dnaChecksum plan""".split()
-_BASIC_MULTIS = """weblog schoolHomepage workplaceHomepage aimChatID
-icqChatID jabberID msnChatID yahooChatID mbox mbox_sha1sum openid
-img currentProject pastProject publications isPrimaryTopicOf  tipjar page
-made
-workInfoHomepage""".split()
+_SINGLETONS = """gender openid birthday""".split()
+_BASIC_MULTIS = """mbox mbox_sha1sum jabberID aimChatID icqChatID yahooChatID msnChatID weblog tipjar made holdsAccount""".split()
 
-class Person(object):
+class Agent(object):
 
     def __init__(self, path=None):
 
+        for name in _BASIC_MULTIS:
+            setattr(self, "_get_%ss" % name, self._make_getter(name))
+            setattr(Agent, "%ss" % name, property(self._make_property_getter(name)))
+            setattr(self, "add_%s" % name, self._make_adder(name))
+            setattr(self, "del_%s" % name, self._make_deler(name))
         self._graph = Graph()
         if path:
             self._graph.parse(path)
-        for name in _BASIC_MULTIS:
-            setattr(self, "_get_%ss" % name, self._make_getter(name))
-            setattr(Person, "%ss" % name, property(self._make_property_getter(name)))
-            setattr(self, "add_%s" % name, self._make_adder(name))
-            setattr(self, "del_%s" % name, self._make_deler(name))
 
     def _get_primary_topic(self):
         for topic in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
@@ -97,31 +92,6 @@ class Person(object):
         if accountProfilePage:
             self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountProfilePage"), rdflib.URIRef(accountProfilePage)))
         self._graph.add((self._get_primary_topic, rdflib.URIRef("http://xmlns.com/foaf/0.1/holdsAccount"), x))
-
-    # Friend stuff
-    def _build_friend(self, frnd):
-        if isinstance(frnd, rdflib.URIRef):
-            return Person(unicode(frnd))
-        elif isinstance(frnd, rdflib.BNode):
-            # If a "seeAlso gives us the URI of the friend's FOAF profile, use that
-            for uri in self._graph.objects(subject=frnd, predicate=rdflib.URIRef("http://www.w3.org/2000/01/rdf-schema#seeAlso")):
-                return Person(unicode(uri))
-            # Otherwise just build up a graph of what we have and use that
-            g = Graph()
-            for triple in self._graph.triples((frnd, None, None)):
-                g.add(triple)
-            f = Person()
-            f._graph = g
-            return f 
-        return None
-
-    def _get_friends(self):
-        for raw_friend in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/knows')):
-            friend = self._build_friend(raw_friend)
-            if friend:
-                yield friend
-
-    friends = property(_get_friends)
 
     # Serialisation
     def get_xml_string(self):
