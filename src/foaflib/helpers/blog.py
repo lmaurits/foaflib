@@ -5,9 +5,9 @@ from feedparser import parse
 
 def get_latest_entries(foafprofile):
     entries = []
-    if not foafprofile.get_weblogs():
+    if not foafprofile.weblogs:
         return None
-    for blog in foafprofile.get_weblogs():
+    for blog in foafprofile.weblogs:
         u = urlopen(blog)
         blogpage = u.read()
         u.close()
