@@ -2,7 +2,7 @@ import rdflib
 from rdflib.Graph import ConjunctiveGraph as Graph
 from urllib import urlopen
 
-_SINGLETONS = """gender openid birthday""".split()
+_SINGLETONS = """gender openid birthday pubkeyAddress""".split()
 _BASIC_MULTIS = """mbox mbox_sha1sum jabberID aimChatID icqChatID yahooChatID msnChatID weblog tipjar made holdsAccount""".split()
 
 class Agent(object):
