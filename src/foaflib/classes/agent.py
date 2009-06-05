@@ -18,6 +18,7 @@ class Agent(object):
         if path:
             self._graph.parse(path)
 
+    # This is not very robust, I think.
     def _get_primary_topic(self):
         for topic in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
             return topic
@@ -26,14 +27,14 @@ class Agent(object):
     # "singletons".  Singletion I/O is handled purely through __getattr__ and __setattr__, below.
     def __getattr__(self, name):
         if name in _SINGLETONS:
-            for raw in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
+            for raw in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
                 return unicode(raw)
             return None
         raise AttributeError, name
             
     def __setattr__(self, name, value):
         if name in _SINGLETONS:
-            self._graph.remove((None, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
+            self._graph.remove((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
             self._graph.add((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), value))
         else:
             object.__setattr__(self, name, value)
@@ -43,12 +44,12 @@ class Agent(object):
 
     def _make_getter(self, name):
         def method():
-            return [unicode(x) for x in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
+            return [unicode(x) for x in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
         return method
 
     def _make_property_getter(self, name):
         def method(self):
-            return [unicode(x) for x in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
+            return [unicode(x) for x in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
         return method
 
     def _make_adder(self, name):

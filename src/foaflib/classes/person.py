@@ -35,14 +35,14 @@ class Person(Agent):
     # "singletons".  Singletion I/O is handled purely through __getattr__ and __setattr__, below.
     def __getattr__(self, name):
         if name in _SINGLETONS:
-            for raw in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
+            for raw in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
                 return unicode(raw)
             return None
         return Agent.__getattr__(self, name)
             
     def __setattr__(self, name, value):
         if name in _SINGLETONS:
-            self._graph.remove((None, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
+            self._graph.remove((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
             self._graph.add((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), value))
         else:
             Agent.__setattr__(self, name, value)
