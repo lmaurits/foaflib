@@ -2,6 +2,8 @@ import rdflib
 from rdflib.Graph import ConjunctiveGraph as Graph
 from urllib import urlopen
 
+from foaflib.classes.onlineaccount import OnlineAccount
+
 _SINGLETONS = """gender openid birthday pubkeyAddress""".split()
 _BASIC_MULTIS = """mbox mbox_sha1sum jabberID aimChatID icqChatID yahooChatID msnChatID weblog tipjar made holdsAccount""".split()
 
@@ -63,20 +65,13 @@ class Agent(object):
         return method
 
     def _build_account(self, acct):
-        result = {}
-        if isinstance(acct, rdflib.URIRef):
-            result["accountServiceHomepage"] = unicode(acct)
-        elif isinstance(acct, rdflib.Literal):
-            result["accountName"] = unicode(acct)
-        elif isinstance(acct, rdflib.BNode):
-            for pred, obj in self._graph.predicate_objects(acct):
-                if pred == rdflib.URIRef("http://xmlns.com/foaf/0.1/accountServiceHomepage"):
-                    result["accountServiceHomepage"] = unicode(obj)
-                elif pred == rdflib.URIRef("http://xmlns.com/foaf/0.1/accountName"):
-                    result["accountName"] = unicode(obj)
-                elif pred == rdflib.URIRef("http://xmlns.com/foaf/0.1/accountProfilePage"):
-                    result["accountProfilePage"] = unicode(obj)
-        return result
+        if isinstance(acct, rdflib.BNode):
+            return OnlineAccount(self._graph, acct)
+        elif isinstance(acct, rdflib.URIRef):
+            account = OnlineAccount()
+            account.accountServiceHomepage = unicode(acct)
+	    return account
+        return OnlineAccount()
 
     def _get_accounts(self):
         for raw_account in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/holdsAccount')):
