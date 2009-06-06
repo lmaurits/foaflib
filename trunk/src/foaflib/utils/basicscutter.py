@@ -23,9 +23,12 @@ class BasicScutter(object):
         except IOError:
             # If uncertain, best to be polite
             return False
-
-    def get_people(self, people_limit=0, depth_limit=0):
-        people_count = 0
+   
+    def handle_person(self, person):
+        return person
+ 
+    def scutter(self, uri_limit=0, depth_limit=0):
+        uri_count = 0
         depth_count = -1    # (Clearing the seed list doesn't count)
         while self.current_list:
 
@@ -49,9 +52,9 @@ class BasicScutter(object):
                             self.next_list.append(uri)
                             break
 
-                people_count +=1
-                yield p
-                if people_count == people_limit:
+                uri_count +=1
+                yield self.handle_person(p)
+                if uri_count == uri_limit:
                     return
 
             self.current_list = self.next_list[:]
