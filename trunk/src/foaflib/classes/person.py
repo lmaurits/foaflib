@@ -9,7 +9,7 @@ _BASIC_MULTIS = "schoolHomepage workplaceHomepage img currentProject pastProject
 
 class Person(Agent):
 
-    def __init__(self, path=None):
+    def __init__(self, uri=None):
 
 	Agent.__init__(self)
         for name in _BASIC_MULTIS:
@@ -19,9 +19,15 @@ class Person(Agent):
             setattr(self, "del_%s" % name, self._make_deler(name))
 
         self._graph = Graph()
-        if path:
-            self._graph.parse(path)
+        self._error = False
+        if uri:
+            self.uri = uri
+            try:
+                self._graph.parse(uri)
+            except:
+                self._error = True
         else:
+            self.uri = ""
             self._setup_profile()
 
     def _setup_profile(self):
@@ -31,6 +37,24 @@ class Person(Agent):
         self._graph.add((x, rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic'), rdflib.URIRef('#me')))
         self._graph.add((rdflib.URIRef('#me'), rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/Person')))
 
+    def _get_people(self):
+        return self._graph.subjects(rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/Person'))
+
+    def _get_primary_topic(self):
+        # Check for a PersonalProfileDocument
+        for doc in self._graph.triples((None, rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/PersonalProfileDocument'))):
+            for topic in self._graph.objects(subject=doc, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
+                return topic
+        # Check for a single Person
+        if len(list(self._get_people())) == 1:
+            for person in self._get_people():
+                return person
+        # Return someone who isn't known by anyone else in this graph - the best we can do?
+        for person in self._get_people():
+            knowers = self._graph.subjects(rdflib.URIRef('http://xmlns.com/foaf/0.1/knows'), person)
+            if len(list(knowers)) == 0:
+                return person
+            
     # Things you can only reasonably have one of - gender, birthday, first name, etc. - are termed
     # "singletons".  Singletion I/O is handled purely through __getattr__ and __setattr__, below.
     def __getattr__(self, name):
@@ -47,29 +71,58 @@ class Person(Agent):
         else:
             Agent.__setattr__(self, name, value)
 
-    def _build_friend(self, frnd):
-        if isinstance(frnd, rdflib.URIRef):
-            return Person(unicode(frnd))
-        elif isinstance(frnd, rdflib.BNode):
-            # If a "seeAlso gives us the URI of the friend's FOAF profile, use that
-            for uri in self._graph.objects(subject=frnd, predicate=rdflib.URIRef("http://www.w3.org/2000/01/rdf-schema#seeAlso")):
+
+    def _build_friend(self, raw_friend):
+        if isinstance(raw_friend, rdflib.URIRef):
+            return Person(unicode(raw_friend))
+        elif isinstance(raw_friend, rdflib.BNode):
+            # If a "seeAlso" gives us the URI of the friend's FOAF profile, use that
+            for uri in self._graph.objects(subject=raw_friend, predicate=rdflib.URIRef("http://www.w3.org/2000/01/rdf-schema#seeAlso")):
                 return Person(unicode(uri))
-            # Otherwise just build up a graph of what we have and use that
-            g = Graph()
-            for triple in self._graph.triples((frnd, None, None)):
-                g.add(triple)
-            f = Person()
-            f._graph = g
-            return f 
-        return None
+            # Otherwise just build a Person up from what we have
+                f = Person()
+                for (s,p,o) in self._graph.triples((raw_friend, None, None)):
+                    f._graph.add((f._get_primary_topic(),p,o))
+                return f 
 
     def _get_friends(self):
         for raw_friend in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/knows')):
             friend = self._build_friend(raw_friend)
             if friend:
                 yield friend
-
     friends = property(_get_friends)
+
+    def _build_fast_friend(self, raw_friend):
+        if isinstance(raw_friend, rdflib.URIRef):
+            return Person(unicode(raw_friend))
+        elif isinstance(raw_friend, rdflib.BNode):
+            f = Person()
+            for (s,p,o) in self._graph.triples((raw_friend, None, None)):
+                f._graph.add((f._get_primary_topic(),p,o))
+            return f 
+
+    def _get_fast_friends(self):
+        for raw_friend in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/knows')):
+            friend = self._build_fast_friend(raw_friend)
+            if friend:
+                yield friend
+    fast_friends = property(_get_fast_friends)
+
+    def _build_fastest_friend(self, raw_friend):
+        if isinstance(raw_friend, rdflib.URIRef):
+            return None
+        elif isinstance(raw_friend, rdflib.BNode):
+            f = Person()
+            for (s,p,o) in self._graph.triples((raw_friend, None, None)):
+                f._graph.add((f._get_primary_topic(),p,o))
+            return f 
+
+    def _get_fastest_friends(self):
+        for raw_friend in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/knows')):
+            friend = self._build_fastest_friend(raw_friend)
+            if friend:
+                yield friend
+    fastest_friends = property(_get_fastest_friends)
 
     # Serialisation
     def get_xml_string(self, format="rdf/xml"):
