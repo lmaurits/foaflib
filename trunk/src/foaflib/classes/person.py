@@ -24,6 +24,7 @@ class Person(Agent):
             self.uri = uri
             try:
                 self._graph.parse(uri)
+                self._find_me_node()
             except:
                 self._error = True
         else:
@@ -36,38 +37,42 @@ class Person(Agent):
         self._graph.add((x, rdflib.URIRef('http://webns.net/mvcb/generatorAgent'), rdflib.URIRef('http://code.google.com/p/foaflib')))
         self._graph.add((x, rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic'), rdflib.URIRef('#me')))
         self._graph.add((rdflib.URIRef('#me'), rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/Person')))
+        self._me = rdflib.URIRef('#me')
 
     def _get_people(self):
         return self._graph.subjects(rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/Person'))
 
-    def _get_primary_topic(self):
+    def _find_me_node(self):
         # Check for a PersonalProfileDocument
         for doc in self._graph.triples((None, rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/PersonalProfileDocument'))):
             for topic in self._graph.objects(subject=doc, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
-                return topic
+                self._me = topic
+                return
         # Check for a single Person
         if len(list(self._get_people())) == 1:
             for person in self._get_people():
-                return person
+                self._me = person
+                return
         # Return someone who isn't known by anyone else in this graph - the best we can do?
         for person in self._get_people():
             knowers = self._graph.subjects(rdflib.URIRef('http://xmlns.com/foaf/0.1/knows'), person)
             if len(list(knowers)) == 0:
-                return person
+                self._me = person
+                return
             
     # Things you can only reasonably have one of - gender, birthday, first name, etc. - are termed
     # "singletons".  Singletion I/O is handled purely through __getattr__ and __setattr__, below.
     def __getattr__(self, name):
         if name in _SINGLETONS:
-            for raw in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
+            for raw in self._graph.objects(subject=self._me, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
                 return unicode(raw)
             return None
         return Agent.__getattr__(self, name)
             
     def __setattr__(self, name, value):
         if name in _SINGLETONS:
-            self._graph.remove((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
-            self._graph.add((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), value))
+            self._graph.remove((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
+            self._graph.add((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), value))
         else:
             Agent.__setattr__(self, name, value)
 
@@ -91,6 +96,21 @@ class Person(Agent):
             if friend:
                 yield friend
     friends = property(_get_friends)
+
+    def add_friend(self, friend):
+        x = rdflib.BNode()
+        self._graph.add((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/knows'), x))
+        self._graph.add((x, rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/Person')))
+        if friend.name:
+            self._graph.add((x, rdflib.URIRef('http://xmlns.com/foaf/0.1/name'), friend.name))
+        if friend.homepage:
+            self._graph.add((x, rdflib.URIRef('http://xmlns.com/foaf/0.1/homepage'), friend.homepage))
+        for mbox in friend.mboxs:
+            self._graph.add((x, rdflib.URIRef('http://xmlns.com/foaf/0.1/mbox'), mbox))
+        for mbox_sha1sum in friend.mbox_sha1sums:
+            self._graph.add((x, rdflib.URIRef('http://xmlns.com/foaf/0.1/mbox_sha1sum'), mbox_sha1sum))
+        if friend.uri:
+            self._graph.add((x, rdflib.URIRef("http://www.w3.org/2000/01/rdf-schema#seeAlso"), friend.uri))
 
     def _build_fast_friend(self, raw_friend):
         if isinstance(raw_friend, rdflib.URIRef):

@@ -20,7 +20,6 @@ class Agent(object):
         if path:
             self._graph.parse(path)
 
-    # This is not very robust, I think.
     def _get_primary_topic(self):
         for topic in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
             return topic
