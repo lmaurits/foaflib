@@ -1,0 +1,28 @@
+#summary How to track your friends' online activity
+#labels Featured
+
+The `ActivityStream` class makes it easy to keep track of things your friends do online, like making blog posts and Twitter updates, etc.  It's super simple:
+
+{{{
+from foaflib.classes.person import Person
+from foaflib.utils.activitystream import ActivityStream
+
+# Fetch the FOAF profile of the friend to watch
+p = Person("http://www.bill.bloggs.net/foaf.rdf")
+
+# Create an ActivityStream object for that friend
+stream = ActivityStream(p)
+
+# Iterate over the latest things they've done:
+for event in stream.get_latest_events():
+    event_handler(event)
+}}}
+
+Each value of `event` in that final loop is an instance of the `AcctivityStreamEvent` class.  This is a very simple class with four attributes:
+
+  * `type` - A string conveying what type of event this is - like "Blog post" or "Twitter", etc.
+  * `detail` - A string that explains the gist of the event - like the title of a blog post, or a Twitter status, etc.
+  * `link` - A string holding the URL for this event - like the URL of a blog post
+  * `timestamp` - A `time.struct_time` instance representing the time of the event
+
+That's all there is to it!
