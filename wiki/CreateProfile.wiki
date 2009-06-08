@@ -5,6 +5,7 @@ This is how you are _supposed_ to be able to create a FOAF profile using foaflib
 
 {{{
 from foaflib.classes.person import Person
+from foaflib.classes.onlineaccount import OnlineAccount
 
 # Create a new person
 me = Person()
@@ -27,6 +28,12 @@ me.add_friend(wife)
 # Add a friend who already has a FOAF profile
 friend = Person("http://www.john.johnson.net/foaf.rdf")
 me.add_friend(friend)
+
+# Add an account
+twitter = OnlineAccount()
+twitter.accountServiceHomepge = "http://www.twitter.com"
+twitter.accountName = "bbloggs42"
+me.add_account(twitter)
 
 # Save file
 me.save_as_xml_file("my_foaf.rdf")
