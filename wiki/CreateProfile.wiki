@@ -3,6 +3,8 @@
 
 This is how you are _supposed_ to be able to create a FOAF profile using foaflib.  If you follow the instructions here and something goes wrong, it may be a bug!  Let me know.
 
+The profile we create in this example is the same one we access in the example on the ReadProfile page. 
+
 {{{
 from foaflib.classes.person import Person
 from foaflib.classes.onlineaccount import OnlineAccount
