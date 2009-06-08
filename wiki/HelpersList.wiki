@@ -1,4 +1,4 @@
 #summary List of helpers for holdsAccount services.
 
-* `foaflib.helpers.twitter_` - [http://www.twitter.com Twitter] micro-blogging service.
-* `foaflib.helpers.identica` - [http://identi.ca Identi.ca] micro-blogging service.
+  * `foaflib.helpers.twitter_` - [http://www.twitter.com Twitter] micro-blogging service.
+  * `foaflib.helpers.identica` - [http://identi.ca Identi.ca] micro-blogging service.
