@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(name="foaflib",
       version="0.1",
@@ -9,5 +9,5 @@ setup(name="foaflib",
       author_email="luke@maurits.id.au",
       url="http://code.google.com/p/foaflib/",
       packages=["foaflib", "foaflib.classes", "foaflib.helpers", "foaflib.utils"],
-      requires=["rdflib"]
+      install_requires=["rdflib"]
      )
