@@ -1,8 +1,10 @@
 import foaflib.helpers.blog as blog
+from foaflib.helpers.delicious import Delicious
 from foaflib.helpers.identica import Identica
 from foaflib.helpers.twitter_ import Twitter
 
-_ALL_HELPERS_ = [Identica]
+_ALL_HELPERS_ = [Delicious]
+_ALL_HELPERS_.append(Identica)
 _ALL_HELPERS_.append(Twitter)
 
 class ActivityStream(object):
