@@ -1,37 +1,39 @@
+from foaflib.helpers.basehelper import BaseHelper
 from foaflib.utils.activitystreamevent import ActivityStreamEvent
 
-try:
-    import twitter
-    _CAN_DO_ = True
-except ImportError:
-    _CAN_DO_ = False
+class Twitter(BaseHelper):
 
-def get_latest(foafprofile):
-    if not _CAN_DO_:
-	return []
+    def __init__(self):
+        BaseHelper.__init__(self)
+        try:
+            import twitter
+            self.twitter = twitter
+            import time
+            self.time = time
+            self.supported = True
+        except ImportError:
+            self.supported = False
 
-    results = []
-    for account in foafprofile.accounts:
-        if "twitter.com" in account.accountServiceHomepage:
-            tweets = get_latest_tweets_by_account(account)
-            results.extend(tweets)
-    return results
+    def _accept_account(self, account):
+        return "twitter.com" in account.accountServiceHomepage
 
-def get_latest_by_account(account):
-    if account.accountName:
-        username = account.accountName
-    elif account.accountProfilePage:
-        username = account.accountProfilePage.split("/")[-1]
-    elif account.accountServiceHomepage:
-        username = account.accountServiceHomepage.split("/")[-1]
-    else:
-        return []
+    def _handle_account(self, account):
+        if account.accountName:
+            username = account.accountName
+        elif account.accountProfilePage:
+            username = account.accountProfilePage.split("/")[-1]
+        elif account.accountServiceHomepage:
+            username = account.accountServiceHomepage.split("/")[-1]
+        else:
+            return []
 
-    api = twitter.Api()
-    tweets = []
-    for tweet in api.GetUserTimeline(username):
-        event = ActivityStreamEvent()
-        event.type = "Tweet"
-        event.detail = tweet.text
-        tweets.append(event)
-    return tweets
+        api = self.twitter.Api()
+        tweets = []
+        for tweet in api.GetUserTimeline(username):
+            event = ActivityStreamEvent()
+            event.type = "Twitter"
+            event.detail = tweet.text
+            event.link = "http://www.twitter.com/%s/status/%d" % (username, tweet.id)
+            event.time.strptime(tweet.created_at, "%a %b %d %H:%M:%S +0000 %Y")
+            tweets.append(event)
+        return tweets
