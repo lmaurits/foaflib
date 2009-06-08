@@ -19,24 +19,22 @@ class Agent(object):
         self._graph = Graph()
         if path:
             self._graph.parse(path)
-
-    def _get_primary_topic(self):
-        for topic in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
-            return topic
+            for topic in self._graph.objects(predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
+                self._me = topic
 
     # Things you can only reasonably have one of - gender, birthday, first name, etc. - are termed
     # "singletons".  Singletion I/O is handled purely through __getattr__ and __setattr__, below.
     def __getattr__(self, name):
         if name in _SINGLETONS:
-            for raw in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
+            for raw in self._graph.objects(subject=self._me, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name)):
                 return unicode(raw)
             return None
         raise AttributeError, name
             
     def __setattr__(self, name, value):
         if name in _SINGLETONS:
-            self._graph.remove((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
-            self._graph.add((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), value))
+            self._graph.remove((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), None))
+            self._graph.add((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), value))
         else:
             object.__setattr__(self, name, value)
 
@@ -45,22 +43,22 @@ class Agent(object):
 
     def _make_getter(self, name):
         def method():
-            return [unicode(x) for x in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
+            return [unicode(x) for x in self._graph.objects(subject=self._me, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
         return method
 
     def _make_property_getter(self, name):
         def method(self):
-            return [unicode(x) for x in self._graph.objects(subject=self._get_primary_topic(), predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
+            return [unicode(x) for x in self._graph.objects(subject=self._me, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name))]
         return method
 
     def _make_adder(self, name):
         def method(value):
-            self._graph.add((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), rdflib.URIRef(value)))
+            self._graph.add((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), rdflib.URIRef(value)))
         return method
 
     def _make_deler(self, name):
         def method(value):
-            self._graph.remove((self._get_primary_topic(), rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), rdflib.URIRef(value)))
+            self._graph.remove((self._me, rdflib.URIRef('http://xmlns.com/foaf/0.1/%s' % name), rdflib.URIRef(value)))
         return method
 
     def _build_account(self, acct):
@@ -80,13 +78,13 @@ class Agent(object):
 
     accounts = property(_get_accounts)
 
-    def add_account(self, accountServiceHomepage, accountName, accountProfilePage=None):
+    def add_account(self, account):
         x = rdflib.BNode()
-        self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountServiceHomepage"), rdflib.URIRef(accountServiceHomepage)))
-        self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountName"), rdflib.URIRef(accountName)))
+        self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountServiceHomepage"), rdflib.URIRef(account.accountServiceHomepage)))
+        self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountName"), rdflib.URIRef(account.accountName)))
         if accountProfilePage:
-            self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountProfilePage"), rdflib.URIRef(accountProfilePage)))
-        self._graph.add((self._get_primary_topic, rdflib.URIRef("http://xmlns.com/foaf/0.1/holdsAccount"), x))
+            self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountProfilePage"), rdflib.URIRef(account.accountProfilePage)))
+        self._graph.add((self._me, rdflib.URIRef("http://xmlns.com/foaf/0.1/holdsAccount"), x))
 
     # Serialisation
     def get_xml_string(self):
