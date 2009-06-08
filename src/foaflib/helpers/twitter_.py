@@ -10,9 +10,9 @@ class Twitter(BaseHelper):
             self.twitter = twitter
             import time
             self.time = time
-            self.supported = True
+            self._supported = True
         except ImportError:
-            self.supported = False
+            self._supported = False
 
     def _accept_account(self, account):
         return "twitter.com" in account.accountServiceHomepage
@@ -34,6 +34,6 @@ class Twitter(BaseHelper):
             event.type = "Twitter"
             event.detail = tweet.text
             event.link = "http://www.twitter.com/%s/status/%d" % (username, tweet.id)
-            event.time.strptime(tweet.created_at, "%a %b %d %H:%M:%S +0000 %Y")
+            event.timestamp = self.time.strptime(tweet.created_at, "%a %b %d %H:%M:%S +0000 %Y")
             tweets.append(event)
         return tweets

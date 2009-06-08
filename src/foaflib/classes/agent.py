@@ -82,7 +82,7 @@ class Agent(object):
         x = rdflib.BNode()
         self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountServiceHomepage"), rdflib.URIRef(account.accountServiceHomepage)))
         self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountName"), rdflib.URIRef(account.accountName)))
-        if accountProfilePage:
+        if account.accountProfilePage:
             self._graph.add((x, rdflib.URIRef("http://xmlns.com/foaf/0.1/accountProfilePage"), rdflib.URIRef(account.accountProfilePage)))
         self._graph.add((self._me, rdflib.URIRef("http://xmlns.com/foaf/0.1/holdsAccount"), x))
 

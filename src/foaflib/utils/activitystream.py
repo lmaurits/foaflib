@@ -22,4 +22,4 @@ class ActivityStream(object):
             events.extend(helper.get_latest(self.person))
         events.sort()
         events.reverse()
-        return events[0:count+1]
+        return events[0:count]
