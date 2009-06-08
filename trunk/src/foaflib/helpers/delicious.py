@@ -6,8 +6,8 @@ class Delicious(BaseHelper):
     def __init__(self):
 
         try:
-            import deliciousapi
-            self.deliciousapi = deliciousapi
+            import feedparser
+            self.feedparser = feedparser
             self._supported = True
         except ImportError:
             self._supported = False
@@ -21,16 +21,15 @@ class Delicious(BaseHelper):
 
         events = []
         username = account.accountName
-        print username
         if not username:
             return events
-        api = self.deliciousapi.DeliciousAPI()
-        user = api.get_user(username)
-        for bookmark in user.bookmarks:
+        feed_url = "http://feeds.delicious.com/v2/rss/%s?count=15" % username
+        entries = self.feedparser.parse(feed_url)["entries"]
+        for entry in entries:
             event = ActivityStreamEvent()
             event.type = "Del.icio.us"
-            event.detail = "Bookmarked: %s" % bookmark[2]
-            event.link = bookmark[0]
-            event.timestamp = bookmark[4].timetuple()
+            event.detail = "Bookmarked: %s" % entry.title
+            event.link = entry.link
+            event.timestamp = entry.updated_parsed
             events.append(event)
         return events 
