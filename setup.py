@@ -9,4 +9,5 @@ setup(name="foaflib",
       author_email="luke@maurits.id.au",
       url="http://code.google.com/p/foaflib/",
       packages=["foaflib", "foaflib.classes", "foaflib.helpers", "foaflib.utils"],
+      requires=["rdflib"]
      )
