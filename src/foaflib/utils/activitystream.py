@@ -1,5 +1,5 @@
 import foaflib.helpers.blog as blog
-import foaflib.helpers.informatica as informatica
+import foaflib.helpers.identica as identica
 import foaflib.helpers.twitter_ as twitter
 
 class ActivityStream(object):
@@ -10,7 +10,7 @@ class ActivityStream(object):
     def get_latest_events(self, count=10):
         events = []
         events.extend(blog.get_latest(self.person))
-        for helper in [informatica, twitter]:
+        for helper in [identica, twitter]:
             events.extend(helper.get_latest(self.person))
         events.sort()
         events.reverse()
