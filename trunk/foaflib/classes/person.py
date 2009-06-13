@@ -44,7 +44,7 @@ class Person(Agent):
 
     def _find_me_node(self):
         # Check for a PersonalProfileDocument
-        for doc in self._graph.triples((None, rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), rdflib.URIRef('http://xmlns.com/foaf/0.1/PersonalProfileDocument'))):
+        for doc in self._graph.subjects(predicate=rdflib.URIRef('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), object=rdflib.URIRef('http://xmlns.com/foaf/0.1/PersonalProfileDocument')):
             for topic in self._graph.objects(subject=doc, predicate=rdflib.URIRef('http://xmlns.com/foaf/0.1/primaryTopic')):
                 self._me = topic
                 return
