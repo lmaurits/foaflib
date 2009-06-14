@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name="foaflib",
-      version="0.1",
+      version="0.2",
       description="Python library for working with FOAF data",
       author="Luke Maurits",
       author_email="luke@maurits.id.au",
